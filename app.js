@@ -16,7 +16,7 @@ const el = (id) => document.getElementById(id);
 
 function setConnBadge(text, cls) {
   const b = el("conn-badge");
-  b.textContent = text;
+  b.innerHTML = `<span class="pulse-dot"></span>${text}`;
   b.className = "badge " + cls;
 }
 
@@ -233,6 +233,18 @@ el("btn-save-settings").addEventListener("click", () => {
     el("settings-modal").classList.add("hidden");
     connectMQTT();
   }
+});
+
+// Theme Toggle (Dark Tech / Light Clean)
+const themeBtn = el("btn-theme");
+if (localStorage.getItem("unoq_theme") === "light") {
+  document.body.classList.add("light-theme");
+  themeBtn.textContent = "☀️";
+}
+themeBtn.addEventListener("click", () => {
+  const isLight = document.body.classList.toggle("light-theme");
+  themeBtn.textContent = isLight ? "☀️" : "🌙";
+  localStorage.setItem("unoq_theme", isLight ? "light" : "dark");
 });
 
 // Init
