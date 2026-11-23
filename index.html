@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applied Physics Challenge 2026 — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Applied Physics — Engineering Application Challenge 2026</h1>
+      <p class="subtitle">Arduino UNO Q + Modulino Smart Seesaw Dashboard</p>
+    </div>
+    <div class="conn-box">
+      <span id="conn-badge" class="badge badge-warn">กำลังเชื่อมต่อ MQTT...</span>
+      <button id="btn-settings" class="btn-ghost" title="ตั้งค่า Topic">⚙️</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- โซน 1: ข้อมูลบังคับ 5 อย่างสำหรับกรรมการ -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>ข้อมูลแสดงผลหลัก (สำหรับกรรมการ)</h2>
+        <div class="timer-pill" id="timer-box">⏱️ เวลาปรับแท่น: <span id="timer-val">01:00</span></div>
+      </div>
+
+      <div class="judge-grid">
+        <div class="stat-card">
+          <div class="stat-label">1. ชนิดของลูกกลมที่เลือก</div>
+          <div class="stat-value" id="val-ball">รอวางลูก...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">2. ระยะที่ต้องทำได้</div>
+          <div class="stat-value" id="val-target">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">3. ระยะเลื่อนแท่นสามเหลี่ยม</div>
+          <div class="stat-value" id="val-fulcrum">0.0 cm</div>
+          <div class="stat-hint" id="val-fulcrum-dir">จุดกึ่งกลาง (0 cm)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">4. ความสูงลูกกอล์ฟที่วัดได้</div>
+          <div class="stat-value" id="val-height">0.0 cm</div>
+        </div>
+        <div class="stat-card stat-card-wide" id="card-status">
+          <div class="stat-label">5. สัญลักษณ์แสดงความสำเร็จ</div>
+          <div class="stat-value" id="val-status">⏳ รอดำเนินการ</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- โซน 2: สเกลจำลองการปรับแท่นสามเหลี่ยม (-20 ถึง +20 cm) -->
+    <section class="panel">
+      <h2>ตำแหน่งปรับแท่นสามเหลี่ยม (ซ้าย -20 cm ⇄ 0 ⇄ ขวา +20 cm)</h2>
+      <div class="scale-wrapper">
+        <div class="scale-labels">
+          <span>⬅️ ไปทางแท่นเหลือง (-20 cm)</span>
+          <span>จุดกึ่งกลาง (0)</span>
+          <span>ไปทางแท่นเทา (+20 cm) ➡️</span>
+        </div>
+        <div class="scale-track">
+          <div class="scale-center-line"></div>
+          <div class="scale-marker" id="fulcrum-marker" style="left: 50%;">
+            <div class="triangle-icon">▲</div>
+            <div class="marker-tag" id="marker-tag">0 cm</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- โซน 3: ปุ่มควบคุมผ่านเว็บ (ทำงานคู่กับปุ่มจริง) -->
+    <section class="panel">
+      <h2>ควบคุมระบบผ่านเว็บ (Remote Control)</h2>
+      <div class="controls-row">
+        <button class="btn btn-range" data-cmd="RANGE_1" id="btn-r1">ระยะที่ 1</button>
+        <button class="btn btn-range" data-cmd="RANGE_2" id="btn-r2">ระยะที่ 2</button>
+        <button class="btn btn-range" data-cmd="RANGE_3" id="btn-r3">ระยะที่ 3</button>
+        <button class="btn btn-start" data-cmd="START" id="btn-start">▶ START ปล่อยลูก</button>
+        <button class="btn btn-reset" data-cmd="RESET" id="btn-reset">↺ รีเซ็ตรอบใหม่</button>
+      </div>
+    </section>
+
+    <!-- โซน 4: ตารางบันทึกผลการทดลอง -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>ตารางบันทึกผล (History Log)</h2>
+        <div class="table-actions">
+          <button id="btn-export" class="btn-small">📥 ดาวน์โหลด CSV</button>
+          <button id="btn-clear-log" class="btn-small btn-danger">🗑️ ล้างตาราง</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>รอบที่</th>
+              <th>เวลา</th>
+              <th>ชนิดลูกบอล</th>
+              <th>ระยะเป้าหมาย</th>
+              <th>ระยะแท่น (cm)</th>
+              <th>ความสูงที่วัดได้</th>
+              <th>ผลลัพธ์</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody">
+            <tr class="empty-row"><td colspan="7">ยังไม่มีข้อมูลการทดลอง</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- โซน Debug เซนเซอร์ (พับเก็บได้) -->
+    <details class="panel debug-panel">
+      <summary>ค่าเซนเซอร์ดิบ (สำหรับ Calibrate หน้างาน)</summary>
+      <div class="debug-grid">
+        <div>Distance #1 (แนวนอน แยกลูก): <strong id="raw-ball">0.0</strong> mm</div>
+        <div>Distance #2 (แนวดิ่ง วัดความสูง): <strong id="raw-height">0.0</strong> mm</div>
+        <div>System State Code: <strong id="raw-state">0</strong></div>
+      </div>
+    </details>
+  </main>
+
+  <!-- Modal ตั้งค่า Topic -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>ตั้งค่าการเชื่อมต่อ MQTT</h3>
+      <label for="topic-input">Team Topic Prefix (ต้องตรงกับใน <code>main.py</code>):</label>
+      <input type="text" id="topic-input" placeholder="unoq_physics_2026_team01" />
+      <div class="modal-actions">
+        <button id="btn-save-settings" class="btn btn-start">บันทึกและเชื่อมต่อใหม่</button>
+        <button id="btn-close-settings" class="btn btn-reset">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
