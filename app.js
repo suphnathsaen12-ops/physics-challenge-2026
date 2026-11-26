@@ -121,7 +121,9 @@ function updateUI(d) {
   card.classList.remove("status-ok", "status-fail");
 
   if (d.state === 4) {
-    if (d.success) {
+    if (Number(d.golf_height_cm || 0) <= 0) {
+      st.textContent = "📏 ปล่อยลูกแล้ว — กรอกความสูงลูกกอล์ฟในช่องด้านบนแล้วกด บันทึก";
+    } else if (d.success) {
       st.textContent = "✅ สำเร็จ! อยู่ในระยะที่กำหนด";
       card.classList.add("status-ok");
     } else {
@@ -129,7 +131,7 @@ function updateUI(d) {
       card.classList.add("status-fail");
     }
   } else if (d.state === 3) {
-    st.textContent = "🚀 กำลังปล่อยลูกและวัดความสูง...";
+    st.textContent = "🚀 กำลังปล่อยลูกบอล...";
   } else if (d.state === 2) {
     st.textContent = "⚙️ พร้อมปล่อยลูก — ปรับแท่นแล้วกด START";
   } else {
@@ -141,18 +143,17 @@ function updateUI(d) {
     startCountdown();
   } else if (d.state === 0 && lastState !== 0) {
     stopCountdown();
+    el("input-height").value = "";
   }
 
-  // Record log once when entering STATE_FINISHED (4)
-  if (d.state === 4 && lastState !== 4 && lastState !== -1) {
+  if (d.state === 4 && lastState !== 4) {
     clearInterval(countdownInterval);
-    addLogEntry(d);
   }
   lastState = d.state;
+  window.latestBoardData = d;
 
   // Raw debug
   el("raw-ball").textContent = Number(d.raw_ball_mm || 0).toFixed(1);
-  el("raw-height").textContent = Number(d.raw_height_mm || 0).toFixed(1);
   el("raw-state").textContent = d.state;
 }
 
@@ -191,6 +192,39 @@ function sendCommand(cmd) {
   }
   client.publish(`${topicPrefix}/cmd`, JSON.stringify({ cmd }));
 }
+
+// Manual Height Input Submit
+function submitManualHeight() {
+  const val = parseFloat(el("input-height").value);
+  if (isNaN(val) || val <= 0) {
+    alert("กรุณากรอกค่าความสูงลูกกอล์ฟ (cm) ให้ถูกต้องครับ");
+    return;
+  }
+  sendCommand(`SET_HEIGHT:${val.toFixed(1)}`);
+
+  const d = Object.assign({}, window.latestBoardData || {
+    ball_type: "NONE", selected_range: 0, target_range: "-", fulcrum_signed_cm: 0
+  });
+  d.golf_height_cm = val;
+  d.state = 4;
+
+  // Check success locally so log records immediately
+  const r = d.selected_range;
+  if (d.ball_type === "BILLIARD") {
+    d.success = (r === 1 && val >= 40 && val <= 50) || (r === 2 && val >= 50 && val <= 60) || (r === 3 && val >= 60 && val <= 70);
+  } else if (d.ball_type === "TENNIS") {
+    d.success = (r === 1 && val >= 10 && val <= 20) || (r === 2 && val >= 20 && val <= 30) || (r === 3 && val >= 30 && val <= 40);
+  } else {
+    d.success = false;
+  }
+  updateUI(d);
+  addLogEntry(d);
+}
+
+el("btn-save-height").addEventListener("click", submitManualHeight);
+el("input-height").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") submitManualHeight();
+});
 
 // Button listeners
 document.querySelectorAll("[data-cmd]").forEach((btn) => {

@@ -184,6 +184,30 @@ body.light-theme .timer-pill { background: #fef9c3; color: #854d0e; }
 }
 .stat-hint { font-size: 0.84rem; color: var(--accent); margin-top: 4px; font-weight: 600; }
 
+.height-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
+.height-input-row input {
+  width: 96px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-glow);
+  background: var(--bg);
+  color: var(--text);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.95rem;
+  text-align: center;
+}
+.btn-save-h {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+}
+
 .status-ok {
   background: rgba(34, 197, 94, 0.16);
   border: 2px solid var(--ok);

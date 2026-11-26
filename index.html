@@ -52,6 +52,10 @@
         <div class="stat-card">
           <div class="stat-label">4. ความสูงลูกกอล์ฟที่วัดได้</div>
           <div class="stat-value" id="val-height">0.0 cm</div>
+          <div class="height-input-row">
+            <input type="number" id="input-height" step="0.1" min="0" max="100" placeholder="กรอก cm" />
+            <button id="btn-save-height" class="btn-small btn-save-h">บันทึก</button>
+          </div>
         </div>
         <div class="stat-card stat-card-wide" id="card-status">
           <div class="stat-label">5. สัญลักษณ์แสดงความสำเร็จ</div>
@@ -124,8 +128,7 @@
     <details class="panel debug-panel">
       <summary>ค่าเซนเซอร์ดิบ (สำหรับ Calibrate หน้างาน)</summary>
       <div class="debug-grid">
-        <div>Distance #1 (แนวนอน แยกลูก): <strong id="raw-ball">0.0</strong> mm</div>
-        <div>Distance #2 (แนวดิ่ง วัดความสูง): <strong id="raw-height">0.0</strong> mm</div>
+        <div>Distance #1 (แนวนอน): <strong id="raw-ball">0.0</strong> mm</div>
         <div>System State Code: <strong id="raw-state">0</strong></div>
       </div>
     </details>
